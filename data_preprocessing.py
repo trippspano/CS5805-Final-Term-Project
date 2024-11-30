@@ -127,7 +127,7 @@ def balance_medals(df):
 
     return balanced_df
 
-
+# clean_dataset()
 # df = encoding("Weight")
 # df, scaler = standardize(df)
 # print(df.head().to_string())

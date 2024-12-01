@@ -403,9 +403,10 @@ def evaluate_svm_model(model, X_test, y_test, kernel_name):
     y_pred = model.predict(X_test)
     y_pred_proba = model.predict_proba(X_test)[:, 1]
 
+    output_file = open('svm_log.txt', 'a')
+
     # Print the train and test scores
-    print(f"Test score ({kernel_name} kernel): {model.score(X_test, y_test):.2f}")
-    print()
+    output_file.write(f"Test score ({kernel_name} kernel): {model.score(X_test, y_test):.2f}\n\n")
 
     # Calculate and print evaluation metrics
     accuracy = accuracy_score(y_test, y_pred)
@@ -414,13 +415,12 @@ def evaluate_svm_model(model, X_test, y_test, kernel_name):
     f1 = f1_score(y_test, y_pred)
     specificity = recall_score(y_test, y_pred, pos_label=0)
 
-    print(f'SVM Model ({kernel_name} kernel)')
-    print(f'Accuracy: {accuracy:.2f}')
-    print(f'Recall: {recall:.2f}')
-    print(f'Precision: {precision:.2f}')
-    print(f'F1 Score: {f1:.2f}')
-    print(f'Specificity: {specificity:.2f}')
-    print()
+    output_file.write(f'SVM Model ({kernel_name} kernel)\n')
+    output_file.write(f'Accuracy: {accuracy:.2f}\n')
+    output_file.write(f'Recall: {recall:.2f}\n')
+    output_file.write(f'Precision: {precision:.2f}\n')
+    output_file.write(f'F1 Score: {f1:.2f}\n')
+    output_file.write(f'Specificity: {specificity:.2f}\n\n')
 
     # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)

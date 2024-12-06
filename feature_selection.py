@@ -1,3 +1,5 @@
+# This file handles EDA and feature selection for Regression and Classification
+
 import data_preprocessing as dp
 import pandas as pd
 import numpy as np
@@ -9,7 +11,10 @@ from sklearn.ensemble import RandomForestRegressor
 import statsmodels.api as sm
 import seaborn as sns
 
-
+# Gets encoded data with target 'Weight' and standardizes it
+# Performs PCA, RF Feature Importance, and Backward Stepwise Regression
+#   to identify important features to select for regression
+# Also outputs the correlation and covariance matrices for the selected features
 def regression_analysis():
     df = dp.encoding("Weight")
     df, scaler = dp.standardize(df)
@@ -32,11 +37,14 @@ def regression_analysis():
     selected_features = ['Height', 'Age', 'Sport_encoded', 'Event_encoded', 'Year', 'is_male', 'Team_encoded']
     correlation_and_covariance_matrices(dp.encoding("Weight"), selected_features)
 
-
+# Gets encoded data with target 'Sex' and standardizes it
+# Performs PCA, RF Feature Importance, and Backward Stepwise Regression
+#   to identify important features to select for classification
+# As discussed in the report, 'Event' is dropped from the dataset
+# Also outputs the correlation and covariance matrices for the selected features
 def classification_analysis(drop_event=False):
     df = dp.encoding("is_male")
-    if drop_event:
-        df = df.drop(columns=['Event_encoded'])
+    df = df.drop(columns=['Event_encoded'])
     df, scaler = dp.standardize(df)
 
     # Split into 80% training and 20% testing
@@ -48,18 +56,14 @@ def classification_analysis(drop_event=False):
     X_test = test_set.drop(columns=['is_male'])
     y_test = test_set['is_male']
 
-    # pca(X_train)
-    #
-    # rf(X_train, y_train)
-    #
-    # backward_stepwise_regression(X_train, y_train)
+    pca(X_train)
 
-    if not drop_event:
-        selected_features = ['Height', 'Age', 'Medal_encoded', 'Event_encoded', 'Year', 'Weight', 'Team_encoded']
-    else:
-        selected_features = ['Weight','Height','Age','Sport_encoded','Year','Team_encoded']
+    rf(X_train, y_train)
+
+    backward_stepwise_regression(X_train, y_train)
+
+    selected_features = ['Weight','Height','Age','Sport_encoded','Year','Team_encoded']
     correlation_and_covariance_matrices(dp.encoding("is_male"), selected_features)
-
 
 # PCA
 def pca(X_train):
@@ -115,7 +119,6 @@ def rf(X_train, y_train):
     print(f"Final selected features: {selected_features}")
     print()
 
-
 # backward stepwise regression
 def backward_stepwise_regression(X_train, y_train):
     results = pd.DataFrame(columns=['Eliminated Feature', 'AIC', 'BIC', 'Adjusted R²', 'p-value'])
@@ -155,7 +158,7 @@ def backward_stepwise_regression(X_train, y_train):
 
     print()
 
-
+# Plots the correlation and covariance matrices for the selected features as heatmaps
 def correlation_and_covariance_matrices(df, selected_features):
     # Calculate the correlation matrix
     correlation_matrix = df[selected_features].corr()
@@ -176,7 +179,3 @@ def correlation_and_covariance_matrices(df, selected_features):
     plt.title('Covariance Matrix Heatmap')
     plt.tight_layout()  # Adjust layout to prevent labels from being cut off
     plt.show()
-
-
-# regression_analysis()
-classification_analysis(drop_event=True)

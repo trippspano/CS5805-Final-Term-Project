@@ -20,10 +20,14 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
+import os
 
 
 import warnings
 import time
+
+# File Name for storing the accuracy of the models
+accuracy_file_name = 'classification_accuracy.txt'
 
 # Performs a Gridsearch for the best hyperparameters for a Logistic Regression model
 # Prints the best parameters found by the Gridsearch
@@ -53,6 +57,10 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     y_pred_best = best_model.predict(X_test)
     y_pred_proba_best = best_model.predict_proba(X_test)[:, 1]
 
+    # Save y_pred_proba and y_test to files
+    np.save(f'roc/y_pred_proba_Logistic_Regression.npy', y_pred_proba_best)
+    np.save(f'roc/y_test_Logistic_Regression.npy', y_test)
+
     print(f"Train score (best model): {best_model.score(X_train, y_train):.2f}")
     print(f"Test score (best model): {best_model.score(X_test, y_test):.2f}")
     print()
@@ -60,7 +68,7 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     cm_best = confusion_matrix(y_test, y_pred_best)
     disp_best = ConfusionMatrixDisplay(confusion_matrix=cm_best)
     disp_best.plot()
-    plt.title('Confusion Matrix (Best Model)')
+    plt.title('Confusion Matrix for Logistic Regression')
     plt.show()
 
     fpr_best, tpr_best, _ = roc_curve(y_test, y_pred_proba_best)
@@ -72,7 +80,7 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve (Best Model)')
+    plt.title('ROC Curve for Logistic Regression')
     plt.legend(loc='lower right')
     plt.show()
 
@@ -82,11 +90,30 @@ def logistic_regression(X_train, X_test, y_train, y_test):
     f1_best = f1_score(y_test, y_pred_best)
     specificity_best = recall_score(y_test, y_pred_best, pos_label=0)
 
+    print(f'Logistic Regression')
     print(f'Accuracy (best model): {accuracy_best:.2f}')
     print(f'Recall (best model): {recall_best:.2f}')
     print(f'Precision (best model): {precision_best:.2f}')
     print(f'F1 Score (best model): {f1_best:.2f}')
     print(f'Specificity (best model): {specificity_best:.2f}')
+
+    # Read the existing file and update the logistic regression accuracy
+    accuracy_file = accuracy_file_name
+    lines = []
+    found = False
+    if os.path.exists(accuracy_file):
+        with open(accuracy_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.startswith('Logistic Regression Test Accuracy:'):
+                lines[i] = f'Logistic Regression Test Accuracy: {accuracy_best:.2f}\n'
+                found = True
+                break
+    if not found:
+        lines.append(f'Logistic Regression Test Accuracy: {accuracy_best:.2f}\n')
+
+    with open(accuracy_file, 'w') as file:
+        file.writelines(lines)
 
 # Performs a Gridsearch for the best hyperparameters for a Decision Tree model
 # Prints the best parameters found by the Gridsearch
@@ -184,6 +211,10 @@ def decision_tree(X_train, X_test, y_train, y_test):
     y_pred = pruned_model.predict(X_test)
     y_pred_proba = pruned_model.predict_proba(X_test)[:, 1]
 
+    # Save y_pred_proba and y_test to files
+    np.save(f'roc/y_pred_proba_Decision_Tree.npy', y_pred_proba)
+    np.save(f'roc/y_test_Decision_Tree.npy', y_test)
+
     # Calculate and print evaluation metrics
     accuracy = accuracy_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
@@ -220,6 +251,24 @@ def decision_tree(X_train, X_test, y_train, y_test):
     plt.legend(loc='lower right')
     plt.show()
 
+    # Read the existing file and update the decision tree accuracy
+    accuracy_file = accuracy_file_name
+    lines = []
+    found = False
+    if os.path.exists(accuracy_file):
+        with open(accuracy_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.startswith('Decision Tree Test Accuracy:'):
+                lines[i] = f'Decision Tree Test Accuracy: {accuracy:.2f}\n'
+                found = True
+                break
+    if not found:
+        lines.append(f'Decision Tree Test Accuracy: {accuracy:.2f}\n')
+
+    with open(accuracy_file, 'w') as file:
+        file.writelines(lines)
+
 # Finds the best K using the elbow method
 # Plots the error rates for each K
 # Plots the confusion matrix and ROC curve for the best K
@@ -229,7 +278,6 @@ def knn(X_train, X_test, y_train, y_test):
     error_rates = []
     k_values = range(1, 31)
 
-    start_time = time.time()
     for k in k_values:
         print(f"K: {k}")
         knn = KNeighborsClassifier(n_neighbors=k)
@@ -237,9 +285,6 @@ def knn(X_train, X_test, y_train, y_test):
         y_pred = knn.predict(X_test)
         error = mean_squared_error(y_test, y_pred)
         error_rates.append(error)
-        end_time = time.time()
-        print(f"Time elapsed: {end_time - start_time:.2f} seconds")
-        start_time = end_time
 
     # error rates
     plt.figure(figsize=(10, 6))
@@ -258,6 +303,10 @@ def knn(X_train, X_test, y_train, y_test):
     knn.fit(X_train, y_train)
     y_pred = knn.predict(X_test)
     y_pred_proba = knn.predict_proba(X_test)[:, 1]
+
+    # Save y_pred_proba and y_test to files
+    np.save(f'roc/y_pred_proba_KNN.npy', y_pred_proba)
+    np.save(f'roc/y_test_KNN.npy', y_test)
 
     # Print the train and test scores
     print(f"Train score (KNN best): {knn.score(X_train, y_train):.2f}")
@@ -300,6 +349,24 @@ def knn(X_train, X_test, y_train, y_test):
     plt.legend(loc='lower right')
     plt.show()
 
+    # Read the existing file and update the KNN accuracy
+    accuracy_file = accuracy_file_name
+    lines = []
+    found = False
+    if os.path.exists(accuracy_file):
+        with open(accuracy_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.startswith('KNN Test Accuracy:'):
+                lines[i] = f'KNN Test Accuracy: {accuracy:.2f}\n'
+                found = True
+                break
+    if not found:
+        lines.append(f'KNN Test Accuracy: {accuracy:.2f}\n')
+
+    with open(accuracy_file, 'w') as file:
+        file.writelines(lines)
+
 # Trains a Naive Bayes model
 # Plots the confusion matrix and ROC curve for the model
 # Prints the evaluation metrics for the model
@@ -309,6 +376,10 @@ def naive_bayes(X_train, X_test, y_train, y_test):
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     y_pred_proba = model.predict_proba(X_test)[:, 1]
+
+    # Save y_pred_proba and y_test to files
+    np.save(f'roc/y_pred_proba_Naive_Bayes.npy', y_pred_proba)
+    np.save(f'roc/y_test_Naive_Bayes.npy', y_test)
 
     print(f"Train score (Naive Bayes): {model.score(X_train, y_train):.2f}")
     print(f"Test score (Naive Bayes): {model.score(X_test, y_test):.2f}")
@@ -348,6 +419,24 @@ def naive_bayes(X_train, X_test, y_train, y_test):
     plt.title('ROC Curve for Naive Bayes')
     plt.legend(loc='lower right')
     plt.show()
+
+    # Read the existing file and update the naive bayes accuracy
+    accuracy_file = accuracy_file_name
+    lines = []
+    found = False
+    if os.path.exists(accuracy_file):
+        with open(accuracy_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.startswith('Naive Bayes Test Accuracy:'):
+                lines[i] = f'Naive Bayes Test Accuracy: {accuracy:.2f}\n'
+                found = True
+                break
+    if not found:
+        lines.append(f'Naive Bayes Test Accuracy: {accuracy:.2f}\n')
+
+    with open(accuracy_file, 'w') as file:
+        file.writelines(lines)
 
 # Performs a Gridsearch for the best hyperparameters for a SVM model
 #   for linear, polynomial, and RBF kernels
@@ -423,8 +512,8 @@ def evaluate_svm_model(model, X_test, y_test, kernel_name):
     y_pred_proba = model.predict_proba(X_test)[:, 1]
 
     # Save y_pred_proba and y_test to files
-    np.save(f'y_pred_proba_{kernel_name}.npy', y_pred_proba)
-    np.save(f'y_test_{kernel_name}.npy', y_test)
+    np.save(f'roc/y_pred_proba_{kernel_name}_SVM.npy', y_pred_proba)
+    np.save(f'roc/y_test_{kernel_name}_SVM.npy', y_test)
 
     # Print the train and test scores
     print(f"Test score ({kernel_name} kernel): {model.score(X_test, y_test):.2f}")
@@ -465,6 +554,24 @@ def evaluate_svm_model(model, X_test, y_test, kernel_name):
     plt.title(f'ROC Curve for SVM ({kernel_name} kernel)')
     plt.legend(loc='lower right')
     plt.show()
+
+    # Read the existing file and update the svm accuracy
+    accuracy_file = accuracy_file_name
+    lines = []
+    found = False
+    if os.path.exists(accuracy_file):
+        with open(accuracy_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.startswith(f'{kernel_name} SVM Test Accuracy:'):
+                lines[i] = f'{kernel_name} SVM Test Accuracy: {accuracy:.2f}\n'
+                found = True
+                break
+    if not found:
+        lines.append(f'{kernel_name} SVM Test Accuracy: {accuracy:.2f}\n')
+
+    with open(accuracy_file, 'w') as file:
+        file.writelines(lines)
 
 
 # Performs a Gridsearch for the best hyperparameters for a Random Forest model
@@ -635,12 +742,16 @@ def mlp(X_train, X_test, y_train, y_test, model_save_path='mlp_model.keras', mod
                         validation_split=0.2, verbose=1)
 
     # Save the model
-    model.save(model_save_path)
-    print(f'Model saved to {model_save_path}')
+    # model.save(model_save_path)
+    # print(f'Model saved to {model_save_path}')
 
     # Evaluate the model
     y_pred_proba = model.predict(X_test).ravel()
     y_pred = (y_pred_proba > 0.5).astype(int)
+
+    # Save y_pred_proba and y_test to files
+    np.save(f'roc/y_pred_proba_MLP.npy', y_pred_proba)
+    np.save(f'roc/y_test_MLP.npy', y_test)
 
     # Print the test score
     print(f"Test score ({model_name}): {accuracy_score(y_test, y_pred):.2f}")
@@ -681,6 +792,24 @@ def mlp(X_train, X_test, y_train, y_test, model_save_path='mlp_model.keras', mod
     plt.title(f'ROC Curve for {model_name}')
     plt.legend(loc='lower right')
     plt.show()
+
+    # Read the existing file and update the mlp accuracy
+    accuracy_file = accuracy_file_name
+    lines = []
+    found = False
+    if os.path.exists(accuracy_file):
+        with open(accuracy_file, 'r') as file:
+            lines = file.readlines()
+        for i, line in enumerate(lines):
+            if line.startswith('MLP Test Accuracy:'):
+                lines[i] = f'MLP Test Accuracy: {accuracy:.2f}\n'
+                found = True
+                break
+    if not found:
+        lines.append(f'MLP Test Accuracy: {accuracy:.2f}\n')
+
+    with open(accuracy_file, 'w') as file:
+        file.writelines(lines)
 
 # Trains and stores the predictions and probabilities for each model
 # Useful for ROC curve plotting
@@ -747,8 +876,8 @@ def train_and_store_predictions(X_train, X_test, y_train, y_test):
     y_pred = (y_pred_proba > 0.5).astype(int)
 
     # Save the predictions and probabilities with the model name 'mlp'
-    np.save('roc/y_pred_MLP.npy', y_pred)
-    np.save('roc/y_pred_proba_MLP.npy', y_pred_proba)
+    np.save('final_data/y_pred_MLP.npy', y_pred)
+    np.save('final_data/y_pred_proba_MLP.npy', y_pred_proba)
 
 
     return predictions, probabilities
@@ -783,20 +912,27 @@ def plot_roc_curves(y_test):
     # Show the plot
     plt.show()
 
-
+# Print the accuracy of each model
+def print_accuracy_file(file_path=accuracy_file_name):
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            contents = file.read()
+            print(contents)
+    else:
+        print(f"The file {file_path} does not exist.")
 
 # This is an example setup for the Olympic dataset
 #   to perform classification analysis
-df = dp.encoding("is_male")
-df, scaler = dp.standardize(df)
-
-selected_features = ['Weight','Height','Age','Sport_encoded','Year','Team_encoded']
-
-X = df[selected_features]
-y = df['is_male']
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=5, stratify=y)
-
-# balance using SMOTE
-smote = SMOTE(random_state=5)
-X_train, y_train = smote.fit_resample(X_train, y_train)
+# df = dp.encoding("is_male")
+# df, scaler = dp.standardize(df)
+#
+# selected_features = ['Weight','Height','Age','Sport_encoded','Year','Team_encoded']
+#
+# X = df[selected_features]
+# y = df['is_male']
+#
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=5, stratify=y)
+#
+# # balance using SMOTE
+# smote = SMOTE(random_state=5)
+# X_train, y_train = smote.fit_resample(X_train, y_train)

@@ -1,4 +1,0 @@
-Best alpha: 0.0
-Train Accuracy (post-pruning): 1.00
-Test Accuracy (post-pruning): 0.95
-
